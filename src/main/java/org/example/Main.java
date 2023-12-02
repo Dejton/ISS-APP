@@ -3,6 +3,8 @@ package org.example;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -25,6 +27,7 @@ public class Main {
 
         do {
             System.out.println("Pobierz położenie ISS");
+            System.out.println("Pobierz ludzi na ISS");
             System.out.println("Zakończ aplikację");
 
             choice = scanner.nextInt();
@@ -32,11 +35,9 @@ public class Main {
 
             switch (choice) {
                 case 1:
-                    //         sprawdź położenie ISS
+                    //  sprawdź położenie ISS
                     HttpClient client = HttpClient.newHttpClient();
-                    HttpRequest request = HttpRequest.newBuilder()
-                            .uri(URI.create(ISS_API_LOCATION))
-                            .build();
+                    HttpRequest request = HttpRequest.newBuilder().uri(URI.create(ISS_API_LOCATION)).build();
 
                     final HttpResponse<String> send = client.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -52,19 +53,27 @@ public class Main {
                     Instant instant = Instant.ofEpochSecond(timestamp);
                     LocalDateTime localDate = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
-                   //  Wyciągamy lan i lat z jsona
-                   final double lat = jsonNode.at("/iss_position/latitude").asDouble();
-                   final double lon = jsonNode.at("/iss_position/longitude").asDouble();
-
+                    //  Wyciągamy lan i lat z jsona
+                    final double lat = jsonNode.at("/iss_position/latitude").asDouble();
+                    final double lon = jsonNode.at("/iss_position/longitude").asDouble();
 
 
                     System.out.println("Dnia " + localDate + " ISS " + "jest w miejscu: szerokość: " + lat + " długość: " + lon);
+
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter("iss_location.csv", true))) {
+                        StringBuilder line = new StringBuilder();
+                        line.append("date").append(",").append(localDate).append(",").append("lat")
+                                .append(",").append(lat).append(",").append("lon").append(",").append(lon).append("\n");
+                        writer.write(line.toString());
+                    }
                     break;
                 case 2:
+
+                case 3:
                     System.out.println("Zamykamy appkę");
             }
-        }  while (choice != 2);
-            scanner.close();
+        } while (choice != 2);
+        scanner.close();
 
     }
 }
