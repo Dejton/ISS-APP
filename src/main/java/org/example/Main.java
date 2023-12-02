@@ -19,6 +19,7 @@ import java.util.Scanner;
 public class Main {
 
     private static final String ISS_API_LOCATION = "http://api.open-notify.org/iss-now.json";
+    private static final String ISS_API_PEOPLE = "http://api.open-notify.org/astros.json";
 
     public static void main(String[] args) throws IOException, InterruptedException {
         Scanner scanner = new Scanner(System.in);
@@ -62,17 +63,40 @@ public class Main {
 
                     try (BufferedWriter writer = new BufferedWriter(new FileWriter("iss_location.csv", true))) {
                         StringBuilder line = new StringBuilder();
-                        line.append("date").append(",").append(localDate).append(",").append("lat")
-                                .append(",").append(lat).append(",").append("lon").append(",").append(lon).append("\n");
+                        line.append("date").append(",").append(localDate).append(",").append("lat").append(",").append(lat).append(",").append("lon").append(",").append(lon).append("\n");
                         writer.write(line.toString());
                     }
                     break;
                 case 2:
+                    HttpClient client1 = HttpClient.newHttpClient();
+                    HttpRequest request1 = HttpRequest.newBuilder().uri(URI.create(ISS_API_PEOPLE)).build();
 
+                    HttpResponse<String> send1 = client1.send(request1, HttpResponse.BodyHandlers.ofString());
+
+                    ObjectMapper objectMapper1 = new ObjectMapper();
+
+                    final JsonNode jsonNode1 = objectMapper1.readTree(send1.body());
+
+                    JsonNode numberOfPeople = jsonNode1.at("/number");
+
+                    StringBuilder people = new StringBuilder();
+
+                    for (JsonNode jsonArrayNode : jsonNode1.withArray("/people")) {
+                        String name = jsonArrayNode.at("/name").asText();
+                        System.out.println(name);
+                        people.append(name).append(",");
+                    }
+
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter("iss_people.csv"))) {
+                        writer.write(people.toString());
+                    }
+                    System.out.println("Wszystkich osób jest: " + numberOfPeople + "\n");
+
+                    break;
                 case 3:
                     System.out.println("Zamykamy appkę");
             }
-        } while (choice != 2);
+        } while (choice != 3);
         scanner.close();
 
     }
